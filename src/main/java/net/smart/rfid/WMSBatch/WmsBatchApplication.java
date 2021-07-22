@@ -10,4 +10,4 @@ public class WmsBatchApplication {
 		SpringApplication.run(WmsBatchApplication.class, args);
 	}
 
-}
+} 
