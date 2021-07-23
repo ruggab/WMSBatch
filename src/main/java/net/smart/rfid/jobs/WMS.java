@@ -7,13 +7,14 @@ import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import net.smart.rfid.tunnel.db.entity.Tipologica;
-import net.smart.rfid.tunnel.db.services.TipologicaService;
 
+import org.springframework.stereotype.Component;
 
+import net.smart.rfid.utils.PropertiesUtil;
+
+@Component
 public class WMS implements Runnable {
 
 	
@@ -22,16 +23,14 @@ public class WMS implements Runnable {
 
 	static boolean running = false;
 
-	static String WMS_IP = "";
-	static int WMS_PORT = -1;
-	static String SEPARATOR = "";
-	static String TYPE_EPC = "S";
+	
 
 	static Socket echoSocket = null;
 	static InputStream is = null;
 	static PrintWriter pw = null;
 	public static int msgid = 1;
 	public static int msgid2 = 2000000;
+	
 
 	public static String PACKAGE_BARCODE = "";
 
@@ -43,13 +42,13 @@ public class WMS implements Runnable {
 	public void run() {
 		
 		
-
+		
 		running = true;
 		try {
 
-			WMS_IP = "";
-			WMS_PORT = 1080;
-			SEPARATOR = "";
+			String WMS_IP = PropertiesUtil.getWmsip();
+			int WMS_PORT = PropertiesUtil.getWmsport();
+			String SEPARATOR = "";
 
 			System.out.println(WMS_IP + ":" + WMS_PORT);
 
