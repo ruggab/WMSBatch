@@ -53,13 +53,13 @@ public class WMS implements Runnable {
 		try {
 
 			String WMS_IP = PropertiesUtil.getWmsip();
-			int WMS_PORT = PropertiesUtil.getWmsport();
+			String WMS_PORT = PropertiesUtil.getWmsport();
 			String SEPARATOR = "";
 			String typeSkuOrEpc = "";
 
 			System.out.println(WMS_IP + ":" + WMS_PORT);
 
-			echoSocket = new Socket(WMS_IP, WMS_PORT);
+			echoSocket = new Socket(WMS_IP, new Integer(WMS_PORT));
 			is = echoSocket.getInputStream();
 
 			byte[] buffer = new byte[2536];

@@ -7,34 +7,34 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class PropertiesUtil {
 	private static String wmsip;
-	private static Integer wmsport;
+	private static String wmsport;
 	private static String separator;
 	private static String epctype;
 	
 	public static String getWmsip() {
 		return wmsip;
 	}
-	public static void setWmsip(String wmsip) {
-		PropertiesUtil.wmsip = wmsip;
+	public  void setWmsip(String wmsip) {
+		this.wmsip = wmsip;
 	}
 	
-	public static Integer getWmsport() {
+	public static String getWmsport() {
 		return wmsport;
 	}
-	public static void setWmsport(Integer wmsport) {
-		PropertiesUtil.wmsport = wmsport;
+	public  void setWmsport(String wmsport) {
+		this.wmsport = wmsport;
 	}
 	public static String getSeparator() {
 		return separator;
 	}
-	public static void setSeparator(String separator) {
-		PropertiesUtil.separator = separator;
+	public  void setSeparator(String separator) {
+		this.separator = separator;
 	}
 	public static String getEpctype() {
 		return epctype;
 	}
-	public static void setEpctype(String epctype) {
-		PropertiesUtil.epctype = epctype;
+	public  void setEpctype(String epctype) {
+		this.epctype = epctype;
 	}
 	
 	

@@ -5,13 +5,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import net.smart.rfid.jobs.WMS;
 import net.smart.rfid.tunnel.db.services.DataStreamService;
 
 @Component
-public class StartComunication implements ApplicationRunner {
+public class StartComunication implements CommandLineRunner {
 
 	private static final Logger LOG = LoggerFactory.getLogger(StartComunication.class);
 	
@@ -20,9 +21,9 @@ public class StartComunication implements ApplicationRunner {
 	
 	
 	@Override
-	public void run(ApplicationArguments args) throws Exception {
+	public void run(String... args) throws Exception {
 		
-		LOG.info("Increment counter");
+		LOG.info("Start Thread WMS");
 	
 		WMS wms = new WMS(dataStreamService);
 		Thread threadWms = new Thread(wms);
