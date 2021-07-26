@@ -9,9 +9,9 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Timer;
 import java.util.TimerTask;
-
+import java.util.regex.Pattern;
 import org.springframework.stereotype.Component;
-
+import net.smart.rfid.tunnel.db.services.DataStreamService;
 import net.smart.rfid.utils.PropertiesUtil;
 
 @Component
@@ -38,6 +38,12 @@ public class WMS implements Runnable {
 
 	public static String type = "";
 
+	DataStreamService dataStreamService;
+	
+	public WMS(DataStreamService dataStreamService) {
+		this.dataStreamService = dataStreamService;
+	}
+	
 	// @Override
 	public void run() {
 		
@@ -49,6 +55,7 @@ public class WMS implements Runnable {
 			String WMS_IP = PropertiesUtil.getWmsip();
 			int WMS_PORT = PropertiesUtil.getWmsport();
 			String SEPARATOR = "";
+			String typeSkuOrEpc = "";
 
 			System.out.println(WMS_IP + ":" + WMS_PORT);
 
@@ -113,38 +120,35 @@ public class WMS implements Runnable {
 
 								System.out.println("**********\nCC " + PACKAGE_BARCODE + "\n**********");
 
-//								CheckBox.pack.setPackageId(PACKAGE_BARCODE);
-//								CheckBox.pack.setType(t.substring(57, 58));
-//								int idpack = CheckBox.pack.insert(CheckBox.conn);
-//
-//								CheckBox.scan.setIdpack(idpack);
-//								CheckBox.scan.insert(CheckBox.conn);
-//
-//								if (t.length() > 58) {
-//
-//									List<Item2> items = new ArrayList<Item2>();
-//									String temp[] = t.substring(58, t.length()).split(Pattern.quote(SEPARATOR));
-//									for (int i = 0; i < temp.length; i++) {
-//										if (temp[i].trim().length() > 0) {
-//
-//											items.add(new Item2("", temp[i]));
-//
-//										}
-//									}
-//									CheckBox.pack.insertDetail(CheckBox.conn, items, idpack);
-//
-//								}
-							} else if (cdapp.equalsIgnoreCase("EC")) {
+								
+								typeSkuOrEpc = t.substring(57, 58);
+								//caricamento atteso
+								
+								//int idpack = CheckBox.pack.insert(CheckBox.conn);
 
+								//CheckBox.scan.setIdpack(idpack);
+								//CheckBox.scan.insert(CheckBox.conn);
+
+								if (t.length() > 58) {
+									String temp[] = t.substring(58, t.length()).split(Pattern.quote(SEPARATOR));
+									for (int i = 0; i < temp.length; i++) {
+										if (temp[i].trim().length() > 0) {
+											//EPC
+											if (typeSkuOrEpc == "S") {
+												this.dataStreamService.createReaderStreamAtteso(PACKAGE_BARCODE, temp[i], "");
+											} else {
+												this.dataStreamService.createReaderStreamAtteso(PACKAGE_BARCODE, "", temp[i]);
+											}
+										}
+									}
+								}
+							} else if (cdapp.equalsIgnoreCase("EC")) {
 								PACKAGE_BARCODE = t.substring(37, 56);
 								PACKAGE_BARCODE = PACKAGE_BARCODE.replaceAll("[^\\x20-\\x7e]", "");
 								PACKAGE_BARCODE = PACKAGE_BARCODE + "                    ";
 								PACKAGE_BARCODE = PACKAGE_BARCODE.substring(0, 20);
-
 							}
-
 							t = "";
-
 						}
 
 						if (cdapp.equalsIgnoreCase("OK")) {
@@ -164,30 +168,24 @@ public class WMS implements Runnable {
 						}
 
 						if (cdapp.equalsIgnoreCase("EC")) {
-
-							//if (Packages.evaluatePackage(CheckBox.conn, PACKAGE_BARCODE, "N")) {
-							if(false) {
+							int esito = 0;
+							if (typeSkuOrEpc == "S") {
+								esito = this.dataStreamService.compareByPackage(PACKAGE_BARCODE, true, false, false, false, true);
+							} else {
+								esito = this.dataStreamService.compareByPackage(PACKAGE_BARCODE, false, false, false, true, true);
+							}
+							//OK
+							if (esito == 1) {
 								System.out.println(">> " + sender + "V02" + idmsg + "**V7000024EC" + PACKAGE_BARCODE + "OK");
 								pw.print(sender + "V02" + idmsg + "**V7000024EC" + PACKAGE_BARCODE + "OK");
 								pw.flush();
-
-								// String msgEC = ""+mac+" V02"+idmsg+"**V7000024EC"+PACKAGE_BARCODE+"OK";
-
-								// System.out.println(">> "+msgEC);
-								// pw.print(msgEC);
-								// pw.flush();
-
+							//KO
 							} else {
 
 								System.out.println(">> " + sender + "V02" + idmsg + "**V7000024EC" + PACKAGE_BARCODE + "KO");
 								pw.print(sender + "V02" + idmsg + "**V7000024EC" + PACKAGE_BARCODE + "KO");
 								pw.flush();
 
-								// String msgEC = ""+mac+" V02"+idmsg+"**V7000024EC"+PACKAGE_BARCODE+"KO";
-
-								// System.out.println(">> "+msgEC);
-								// pw.print(msgEC);
-								// pw.flush();
 
 							}
 

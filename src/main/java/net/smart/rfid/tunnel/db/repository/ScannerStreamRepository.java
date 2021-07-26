@@ -74,4 +74,9 @@ public interface ScannerStreamRepository extends JpaRepository<ScannerStream, Lo
 	//From 1 to 30/31 mese precedente
 	@Query(value="SELECT count(*) from scanner_stream where DATE(time_stamp) > current_date - interval '30 days'  and esito = 'KO'", nativeQuery = true)
 	Integer getTotalPackageKoLastMonth();
+	
+	
+	ScannerStream findByPackageData(String packData);
+	
+	
 }

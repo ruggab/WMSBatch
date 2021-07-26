@@ -62,11 +62,11 @@ public class DataStreamService  {
 		scannerStreamRepository.save(ss);
 	}
 
-	public ReaderStreamAtteso createReaderStreamAtteso(String collo, String epc, String tid) throws Exception {
+	public ReaderStreamAtteso createReaderStreamAtteso(String collo, String epc, String barcode) throws Exception {
 		ReaderStreamAtteso rsa = new ReaderStreamAtteso();
 		rsa.setPackageData(collo);
 		rsa.setEpc(epc);
-		rsa.setTid(tid);
+		rsa.setBarcode(barcode);
 		ReaderStreamAtteso readerStreamAtteso = readerStreamAttesoRepository.save(rsa);
 		return readerStreamAtteso;
 	}
@@ -79,8 +79,12 @@ public class DataStreamService  {
 
 	
 
-	public int compareByPackage(ScannerStream scannerStream, Boolean epc, Boolean tid, Boolean user, Boolean barcode, Boolean quantita) throws Exception {
+	public int compareByPackage( String packData, Boolean epc, Boolean tid, Boolean user, Boolean barcode, Boolean quantita) throws Exception {
+		
+		
 		int ret = 2;
+		
+		ScannerStream scannerStream = scannerStreamRepository.findByPackageData(packData);
 		String comp = compareQuantitaByPackage(scannerStream.getId(), scannerStream.getPackageData(), epc, tid, user, barcode, quantita);
 		String quantitaRet = comp.replace("KO", "");
 		if (comp.contains("OK")) {
