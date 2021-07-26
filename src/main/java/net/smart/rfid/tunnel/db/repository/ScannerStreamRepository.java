@@ -76,7 +76,7 @@ public interface ScannerStreamRepository extends JpaRepository<ScannerStream, Lo
 	Integer getTotalPackageKoLastMonth();
 	
 	
-	ScannerStream findByPackageData(String packData);
+	public ScannerStream findByPackageData(String packData);
 	
 	
 }
