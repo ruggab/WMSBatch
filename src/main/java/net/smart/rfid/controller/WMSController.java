@@ -22,6 +22,17 @@ public class WMSController {
 		} catch (Exception e) {
 			throw e;
 		}
-
+	}
+	
+	
+	@PostMapping("/callWMSOut")
+	public String  callWMSOut(@RequestBody String packageId) throws Exception {
+		try {
+			WMS.barcodeOut = packageId;
+			
+			return "ok";
+		} catch (Exception e) {
+			throw e;
+		}
 	}
 }
