@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 
 import net.smart.rfid.tunnel.db.services.DataStreamService;
 import net.smart.rfid.utils.PropertiesUtil;
+import net.smart.rfid.utils.Utils;
 
 public class WMSManual {
 
@@ -28,10 +29,10 @@ public class WMSManual {
 			barcodeIn = barcodeIn + "                    ";
 			barcodeIn = barcodeIn.substring(0, 20);
 			//
-			String WMS_IP = PropertiesUtil.getWmsip();
-			String WMS_PORT = PropertiesUtil.getWmsport();
-			String SEPARATOR = "";
-			String typeSkuOrEpc = "";
+			String WMS_IP = PropertiesUtil.getWmsManualIp();
+			String WMS_PORT = PropertiesUtil.getWmsManualPort();
+			String SEPARATOR = PropertiesUtil.getWmsManualSeparator();
+			String typeSkuOrEpc = PropertiesUtil.getWmsManualEpctype();
 			//
 			System.out.println(WMS_IP + ":" + WMS_PORT);
 			//
@@ -165,11 +166,11 @@ public class WMSManual {
 			barcodeOut = barcodeOut + "                    ";
 			barcodeOut = barcodeOut.substring(0, 20);
 
-			String WMS_IP = PropertiesUtil.getWmsip();
-			String WMS_PORT = PropertiesUtil.getWmsport();
-			String SEPARATOR = "";
-			String typeSkuOrEpc = "";
-
+			String WMS_IP = PropertiesUtil.getWmsManualIp();
+			String WMS_PORT = PropertiesUtil.getWmsManualPort();
+			String SEPARATOR = PropertiesUtil.getWmsManualSeparator();
+			String typeSkuOrEpc = PropertiesUtil.getWmsManualEpctype();
+			
 			System.out.println(WMS_IP + ":" + WMS_PORT);
 
 			echoSocket = new Socket(WMS_IP, new Integer(WMS_PORT));
@@ -241,14 +242,15 @@ public class WMSManual {
 
 						if (cdapp.equalsIgnoreCase("EC")) {
 
-							int esito = 0;
+							String esito = "";
 							if (typeSkuOrEpc == "S") {
-								esito = dataStreamService.compareByPackage(PACKAGE_BARCODE, true, false, false, false, true);
+								esito = dataStreamService.compareByPackage(PACKAGE_BARCODE, Utils.SKU);
 							} else {
-								esito = dataStreamService.compareByPackage(PACKAGE_BARCODE, false, false, false, true, true);
+								esito = dataStreamService.compareByPackage(PACKAGE_BARCODE, Utils.EPC);
 							}
+							System.out.println(">> ESITO >>" + esito);
 							// OK
-							if (esito == 1) {
+							if (esito.equals(Utils.OK)) {
 								System.out.println(">> " + sender + "V02" + idmsg + "**V7000024EC" + PACKAGE_BARCODE + "OK");
 								pw.print(sender + "V02" + idmsg + "**V7000024EC" + PACKAGE_BARCODE + "OK");
 								pw.flush();

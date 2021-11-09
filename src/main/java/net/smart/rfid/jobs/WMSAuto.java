@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
 import org.springframework.stereotype.Component;
 import net.smart.rfid.tunnel.db.services.DataStreamService;
 import net.smart.rfid.utils.PropertiesUtil;
+import net.smart.rfid.utils.Utils;
 
 @Component
 public class WMSAuto implements Runnable {
@@ -42,10 +43,10 @@ public class WMSAuto implements Runnable {
 
 		running = true;
 		try {
-			String WMS_IP = PropertiesUtil.getWmsip();
-			String WMS_PORT = PropertiesUtil.getWmsport();
-			String SEPARATOR = "";
-			String typeSkuOrEpc = "";
+			String WMS_IP = PropertiesUtil.getWmsAutoIp();
+			String WMS_PORT = PropertiesUtil.getWmsAutoPort();
+			String SEPARATOR = PropertiesUtil.getWmsAutoSeparator();
+			String typeSkuOrEpc = PropertiesUtil.getWmsAutoEpctype();
 			System.out.println(WMS_IP + ":" + WMS_PORT);
 			echoSocket = new Socket(WMS_IP, new Integer(WMS_PORT));
 			is = echoSocket.getInputStream();
@@ -140,14 +141,15 @@ public class WMSAuto implements Runnable {
 						}
 
 						if (cdapp.equalsIgnoreCase("EC")) {
-							int esito = 0;
+							String esito = "";
 							if (typeSkuOrEpc == "S") {
-								esito = this.dataStreamService.compareByPackage(PACKAGE_BARCODE, true, false, false, false, true);
+								esito = this.dataStreamService.compareByPackage(PACKAGE_BARCODE, Utils.SKU);
 							} else {
-								esito = this.dataStreamService.compareByPackage(PACKAGE_BARCODE, false, false, false, true, true);
+								esito = this.dataStreamService.compareByPackage(PACKAGE_BARCODE, Utils.EPC);
 							}
+							System.out.println(">> ESITO >>" + esito);
 							// OK
-							if (esito == 1) {
+							if (esito.equals(Utils.OK)) {
 								System.out.println(">> " + sender + "V01" + idmsg + "**V7000024EC" + PACKAGE_BARCODE + "OK");
 								pw.print(sender + "V01" + idmsg + "**V7000024EC" + PACKAGE_BARCODE + "OK");
 								pw.flush();

@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import net.smart.rfid.jobs.WMSAuto;
 import net.smart.rfid.jobs.WMSManual;
 import net.smart.rfid.tunnel.db.services.DataStreamService;
 
