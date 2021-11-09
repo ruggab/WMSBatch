@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
-import net.smart.rfid.jobs.WMS;
+import net.smart.rfid.jobs.WMSAuto;
 import net.smart.rfid.tunnel.db.services.DataStreamService;
 
 @Component
@@ -21,10 +21,10 @@ public class StartComunication implements CommandLineRunner {
 	@Override
 	public void run(String... args) throws Exception {
 		
-		LOG.info("Start Thread WMS");
+		LOG.info("Start Thread WMSAuto");
 	
-		WMS wms = new WMS(dataStreamService);
-		Thread threadWms = new Thread(wms);
+		WMSAuto wmsAuto = new WMSAuto(dataStreamService);
+		Thread threadWms = new Thread(wmsAuto);
 		threadWms.start();
 	}
 

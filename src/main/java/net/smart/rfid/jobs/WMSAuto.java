@@ -15,22 +15,15 @@ import net.smart.rfid.tunnel.db.services.DataStreamService;
 import net.smart.rfid.utils.PropertiesUtil;
 
 @Component
-public class WMS implements Runnable {
-
-	
-	public static String barcodeIn = "";
-	public static String barcodeOut = "";
+public class WMSAuto implements Runnable {
 
 	static boolean running = false;
-
-	
 
 	static Socket echoSocket = null;
 	static InputStream is = null;
 	static PrintWriter pw = null;
 	public static int msgid = 1;
 	public static int msgid2 = 2000000;
-	
 
 	public static String PACKAGE_BARCODE = "";
 
@@ -39,26 +32,21 @@ public class WMS implements Runnable {
 	public static String type = "";
 
 	DataStreamService dataStreamService;
-	
-	public WMS(DataStreamService dataStreamService) {
+
+	public WMSAuto(DataStreamService dataStreamService) {
 		this.dataStreamService = dataStreamService;
 	}
-	
+
 	// @Override
 	public void run() {
-		
-		
-		
+
 		running = true;
 		try {
-
 			String WMS_IP = PropertiesUtil.getWmsip();
 			String WMS_PORT = PropertiesUtil.getWmsport();
 			String SEPARATOR = "";
 			String typeSkuOrEpc = "";
-
 			System.out.println(WMS_IP + ":" + WMS_PORT);
-
 			echoSocket = new Socket(WMS_IP, new Integer(WMS_PORT));
 			is = echoSocket.getInputStream();
 
@@ -73,17 +61,12 @@ public class WMS implements Runnable {
 			mac = mac.replaceAll("-", "").toUpperCase();
 
 			if (login) {
-				// System.out.println(">> "+mac+" V010000001**V7000019LIV01 ");
 				pw.print("" + mac + "   V020000001**V7000005LIV01");
 				pw.flush();
-
 				login = false;
 			}
-
+			//
 			timer.schedule(new KeepAlive(pw, mac), 0, 5000);
-
-			timer.schedule(new barcodeIn(pw, mac), 0, 500);
-			timer.schedule(new barcodeOut(pw, mac), 0, 500);
 
 			String sender = "";
 			String idmsg = "";
@@ -94,12 +77,9 @@ public class WMS implements Runnable {
 			type = "";
 
 			while ((read = is.read(buffer)) != -1) {
-
 				try {
-
 					String output = new String(buffer, 0, read);
 					System.out.println("<< " + output + " (" + output.length() + ")");
-
 					String in[] = output.split("\\n");
 					for (String t : in) {
 
@@ -117,23 +97,21 @@ public class WMS implements Runnable {
 								PACKAGE_BARCODE = PACKAGE_BARCODE.replaceAll("[^\\x20-\\x7e]", "");
 								PACKAGE_BARCODE = PACKAGE_BARCODE + "                    ";
 								PACKAGE_BARCODE = PACKAGE_BARCODE.substring(0, 20);
-
 								System.out.println("**********\nCC " + PACKAGE_BARCODE + "\n**********");
-
-								
 								typeSkuOrEpc = t.substring(57, 58);
-								//caricamento atteso
-								
-								//int idpack = CheckBox.pack.insert(CheckBox.conn);
 
-								//CheckBox.scan.setIdpack(idpack);
-								//CheckBox.scan.insert(CheckBox.conn);
+								// caricamento atteso
+
+								// int idpack = CheckBox.pack.insert(CheckBox.conn);
+
+								// CheckBox.scan.setIdpack(idpack);
+								// CheckBox.scan.insert(CheckBox.conn);
 
 								if (t.length() > 58) {
 									String temp[] = t.substring(58, t.length()).split(Pattern.quote(SEPARATOR));
 									for (int i = 0; i < temp.length; i++) {
 										if (temp[i].trim().length() > 0) {
-											//EPC
+											// EPC
 											if (typeSkuOrEpc == "S") {
 												this.dataStreamService.createReaderStreamAtteso(PACKAGE_BARCODE, temp[i], "");
 											} else {
@@ -152,19 +130,13 @@ public class WMS implements Runnable {
 						}
 
 						if (cdapp.equalsIgnoreCase("OK")) {
-
 							System.out.println(" - Note: Login OK");
-
 						}
 
 						if (cdapp.equalsIgnoreCase("CC")) {
-
-							String msgCC = "" + mac + "   V02" + idmsg + "**V7000004CCOK";
-
-							System.out.println(">> " + msgCC);
-							pw.print(msgCC);
+							System.out.println(">> " + sender + "V01" + idmsg + "**V7000004CCOK");
+							pw.print(sender + "V01" + idmsg + "**V7000004CCOK");
 							pw.flush();
-
 						}
 
 						if (cdapp.equalsIgnoreCase("EC")) {
@@ -174,47 +146,23 @@ public class WMS implements Runnable {
 							} else {
 								esito = this.dataStreamService.compareByPackage(PACKAGE_BARCODE, false, false, false, true, true);
 							}
-							//OK
+							// OK
 							if (esito == 1) {
-								System.out.println(">> " + sender + "V02" + idmsg + "**V7000024EC" + PACKAGE_BARCODE + "OK");
-								pw.print(sender + "V02" + idmsg + "**V7000024EC" + PACKAGE_BARCODE + "OK");
+								System.out.println(">> " + sender + "V01" + idmsg + "**V7000024EC" + PACKAGE_BARCODE + "OK");
+								pw.print(sender + "V01" + idmsg + "**V7000024EC" + PACKAGE_BARCODE + "OK");
 								pw.flush();
-							//KO
+								// KO
 							} else {
-
-								System.out.println(">> " + sender + "V02" + idmsg + "**V7000024EC" + PACKAGE_BARCODE + "KO");
-								pw.print(sender + "V02" + idmsg + "**V7000024EC" + PACKAGE_BARCODE + "KO");
+								System.out.println(">> " + sender + "V01" + idmsg + "**V7000024EC" + PACKAGE_BARCODE + "KO");
+								pw.print(sender + "V01" + idmsg + "**V7000024EC" + PACKAGE_BARCODE + "KO");
 								pw.flush();
-
-
 							}
-
 						}
 
 					}
 
 				} catch (Exception e) {
 					e.printStackTrace();
-
-					// if(msgid==9999999)
-					// msgid = 0;
-					// msgid = msgid+1;
-					//
-					//
-					// String sMsgid = String.format("%07d", msgid);
-					//
-					// // Keep Alive (Every 60 sec)
-					// System.out.println(">> "+mac+" V01"+sMsgid+"**V7000002AK");
-					//
-					// String msgAck = ""+mac+" V01"+sMsgid+"**V7000002AK";
-					//
-					// //new Thread(new CallNotify("PING","L")).start();
-					//
-					//
-					//
-					// pw.print(msgAck);
-					// pw.flush();
-
 				}
 
 			}
@@ -293,63 +241,4 @@ public class WMS implements Runnable {
 		}
 	}
 
-	class barcodeIn extends TimerTask {
-
-		private PrintWriter pw;
-		private String mac;
-
-		public barcodeIn(PrintWriter pw, String mac) {
-			this.pw = pw;
-			this.mac = mac;
-		}
-
-		public void run() {
-
-			if (barcodeIn.length() > 0) {
-
-				if (msgid2 == 9999999)
-					msgid2 = 2000000;
-				msgid2 = msgid2 + 1;
-
-				String sMsgid = String.format("%07d", msgid2);
-
-				System.out.println(">> SCMAN002       PLV" + sMsgid + "**V7000053RF               SCMAN002       " + barcodeIn + " ");
-				pw.print("SCMAN002       PLV" + sMsgid + "**V7000053RF               SCMAN002       " + barcodeIn + " ");
-				pw.flush();
-
-				barcodeIn = "";
-			}
-
-		}
-	}
-
-	class barcodeOut extends TimerTask {
-
-		private PrintWriter pw;
-		private String mac;
-
-		public barcodeOut(PrintWriter pw, String mac) {
-			this.pw = pw;
-			this.mac = mac;
-		}
-
-		public void run() {
-
-			if (barcodeOut.length() > 0) {
-
-				if (msgid2 == 9999999)
-					msgid2 = 2000000;
-				msgid2 = msgid2 + 1;
-
-				String sMsgid = String.format("%07d", msgid2);
-
-				System.out.println(">> " + mac + "   PLV" + sMsgid + "**V7000084RD               SCMAN003       " + barcodeOut + "00000000000000000               ");
-				pw.print("" + mac + "   PLV" + sMsgid + "**V7000084RD               SCMAN003       " + barcodeOut + "00000000000000000               ");
-				pw.flush();
-
-				barcodeIn = "";
-			}
-
-		}
-	}
 }
