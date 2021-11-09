@@ -38,7 +38,7 @@ public class DataStreamService  {
 	}
 
 
-	@Transactional
+	
 	public String compareByPackage( String packageData, String typeExp) throws Exception {
 		ScannerStream sc = scannerStreamRepository.findByPackageData(packageData);
 		Integer qtaAtteso = readerStreamAttesoRepository.getCountExpected(packageData);
