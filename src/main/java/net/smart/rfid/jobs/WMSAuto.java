@@ -93,30 +93,24 @@ public class WMSAuto implements Runnable {
 							msg = t.substring(35, (Integer.parseInt(length) + 35));
 
 							if (cdapp.equalsIgnoreCase("CC")) {
-
 								PACKAGE_BARCODE = t.substring(37, 57);
 								PACKAGE_BARCODE = PACKAGE_BARCODE.replaceAll("[^\\x20-\\x7e]", "");
 								PACKAGE_BARCODE = PACKAGE_BARCODE + "                    ";
 								PACKAGE_BARCODE = PACKAGE_BARCODE.substring(0, 20);
 								System.out.println("**********\nCC " + PACKAGE_BARCODE + "\n**********");
 								typeSkuOrEpc = t.substring(57, 58);
-
-								// caricamento atteso
-
-								// int idpack = CheckBox.pack.insert(CheckBox.conn);
-
-								// CheckBox.scan.setIdpack(idpack);
-								// CheckBox.scan.insert(CheckBox.conn);
-
+								dataStreamService.deleteExpectedByPackage(PACKAGE_BARCODE);
 								if (t.length() > 58) {
 									String temp[] = t.substring(58, t.length()).split(Pattern.quote(SEPARATOR));
 									for (int i = 0; i < temp.length; i++) {
 										if (temp[i].trim().length() > 0) {
-											// EPC
-											if (typeSkuOrEpc == "S") {
-												this.dataStreamService.createReaderStreamAtteso(PACKAGE_BARCODE, temp[i], "");
+											if (typeSkuOrEpc.equals("S")) {
+												// SKU
+												System.out.println("**********SKU: " + temp[i] + "**********");
+												dataStreamService.createSinglePackExpected(PACKAGE_BARCODE, "", "", temp[i]);
 											} else {
-												this.dataStreamService.createReaderStreamAtteso(PACKAGE_BARCODE, "", temp[i]);
+												System.out.println("**********EPC: " + temp[i] + "**********");
+												dataStreamService.createSinglePackExpected(PACKAGE_BARCODE, temp[i], "", "");
 											}
 										}
 									}

@@ -15,7 +15,10 @@ public class Utils {
 	public static final String TAG_ERR = "E-";
 
 	
-	
+	public static String removeSpaces(String st) {
+		String ret = st.replaceAll("\\s+","");;
+		return ret;
+	}
 	
 
 }

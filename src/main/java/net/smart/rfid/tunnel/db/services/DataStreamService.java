@@ -28,11 +28,12 @@ public class DataStreamService  {
 	@Autowired
 	private ScannerStreamRepository scannerStreamRepository;
 
-	public ReaderStreamAtteso createReaderStreamAtteso(String collo, String epc, String barcode) throws Exception {
+	public ReaderStreamAtteso createSinglePackExpected(String packageData, String epc, String tid, String sku) throws Exception {
 		ReaderStreamAtteso rsa = new ReaderStreamAtteso();
-		rsa.setPackageData(collo);
-		rsa.setEpc(epc);
-		rsa.setBarcode(barcode);
+		rsa.setPackageData(Utils.removeSpaces(packageData));
+		rsa.setEpc(Utils.removeSpaces(epc));
+		rsa.setTid(Utils.removeSpaces(tid));
+		rsa.setBarcode(Utils.removeSpaces(sku));
 		ReaderStreamAtteso readerStreamAtteso = readerStreamAttesoRepository.save(rsa);
 		return readerStreamAtteso;
 	}
@@ -52,6 +53,14 @@ public class DataStreamService  {
 		}
 		return esito;
 	}
+	
+	
+	@Transactional
+	public void deleteExpectedByPackage(String packageData) throws Exception {
+		//
+		readerStreamAttesoRepository.deleteByPackageData(packageData.trim());
+	}
+	
 	
 	
 	
