@@ -76,6 +76,7 @@ public interface ScannerStreamRepository extends JpaRepository<ScannerStream, Lo
 	Integer getTotalPackageKoLastMonth();
 	
 	
+	@Query(value="select * from scanner_stream where package_data = ?1 order by time_stamp desc limit 1", nativeQuery = true)
 	public ScannerStream findByPackageData(String packData);
 	
 	

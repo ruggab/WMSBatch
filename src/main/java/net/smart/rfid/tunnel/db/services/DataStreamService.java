@@ -41,8 +41,12 @@ public class DataStreamService  {
 
 	
 	public String compareByPackage( String packageData, String typeExp) throws Exception {
+		packageData = packageData.trim();
+		logger.info("compareByPackage:" +  packageData);
 		ScannerStream sc = scannerStreamRepository.findByPackageData(packageData);
+		logger.info("idpack:" +  sc.getId());
 		Integer qtaAtteso = readerStreamAttesoRepository.getCountExpected(packageData);
+		logger.info("quantita atteso:" + qtaAtteso);
 		String esito = Utils.MISSING_EXPECTED;
 		if (qtaAtteso != 0 && !packageData.contains("E-")) {
 			List<ExpectedDifference> listDiff = readerStreamAttesoRepository.getEsitoDiffNew(sc.getId().intValue(), packageData, typeExp);

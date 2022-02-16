@@ -10,13 +10,20 @@ import java.net.UnknownHostException;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.regex.Pattern;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+
 import net.smart.rfid.tunnel.db.services.DataStreamService;
 import net.smart.rfid.utils.PropertiesUtil;
 import net.smart.rfid.utils.Utils;
 
 @Component
 public class WMSAuto implements Runnable {
+	
+	private static final Logger logger = LoggerFactory.getLogger(WMSAuto.class);
+	
 
 	static boolean running = false;
 
@@ -40,7 +47,7 @@ public class WMSAuto implements Runnable {
 
 	// @Override
 	public void run() {
-
+		logger.info("Start RUN");
 		running = true;
 		try {
 			String WMS_IP = PropertiesUtil.getWmsAutoIp();
@@ -50,7 +57,7 @@ public class WMSAuto implements Runnable {
 			System.out.println(WMS_IP + ":" + WMS_PORT);
 			echoSocket = new Socket(WMS_IP, new Integer(WMS_PORT));
 			is = echoSocket.getInputStream();
-
+			
 			byte[] buffer = new byte[2536];
 			pw = new PrintWriter(echoSocket.getOutputStream(), true);
 
@@ -80,7 +87,7 @@ public class WMSAuto implements Runnable {
 			while ((read = is.read(buffer)) != -1) {
 				try {
 					String output = new String(buffer, 0, read);
-					System.out.println("<< " + output + " (" + output.length() + ")");
+					logger.info("<< " + output + " (" + output.length() + ")");
 					String in[] = output.split("\\n");
 					for (String t : in) {
 
@@ -97,7 +104,7 @@ public class WMSAuto implements Runnable {
 								PACKAGE_BARCODE = PACKAGE_BARCODE.replaceAll("[^\\x20-\\x7e]", "");
 								PACKAGE_BARCODE = PACKAGE_BARCODE + "                    ";
 								PACKAGE_BARCODE = PACKAGE_BARCODE.substring(0, 20);
-								System.out.println("**********\nCC " + PACKAGE_BARCODE + "\n**********");
+								logger.info("**********CC " + PACKAGE_BARCODE + "**********");
 								typeSkuOrEpc = t.substring(57, 58);
 								dataStreamService.deleteExpectedByPackage(PACKAGE_BARCODE);
 								if (t.length() > 58) {
@@ -106,11 +113,11 @@ public class WMSAuto implements Runnable {
 										if (temp[i].trim().length() > 0) {
 											if (typeSkuOrEpc.equals("S")) {
 												// SKU
-												System.out.println("**********SKU: " + temp[i] + "**********");
-												dataStreamService.createSinglePackExpected(PACKAGE_BARCODE, "", "", temp[i]);
+												logger.info("**********SKU: " + temp[i] + "**********");
+												dataStreamService.createSinglePackExpected(PACKAGE_BARCODE.trim(), "", "", temp[i]);
 											} else {
-												System.out.println("**********EPC: " + temp[i] + "**********");
-												dataStreamService.createSinglePackExpected(PACKAGE_BARCODE, temp[i], "", "");
+												logger.info("**********EPC: " + temp[i] + "**********");
+												dataStreamService.createSinglePackExpected(PACKAGE_BARCODE.trim(), temp[i], "", "");
 											}
 										}
 									}
@@ -125,31 +132,32 @@ public class WMSAuto implements Runnable {
 						}
 
 						if (cdapp.equalsIgnoreCase("OK")) {
-							System.out.println(" - Note: Login OK");
+							logger.info(" - Note: Login OK");
 						}
 
 						if (cdapp.equalsIgnoreCase("CC")) {
-							System.out.println(">> " + sender + "V01" + idmsg + "**V7000004CCOK");
+							logger.info(">> " + sender + "V01" + idmsg + "**V7000004CCOK");
 							pw.print(sender + "V01" + idmsg + "**V7000004CCOK");
 							pw.flush();
 						}
 
 						if (cdapp.equalsIgnoreCase("EC")) {
+							logger.info(">> typeSkuOrEpc >>" + typeSkuOrEpc);
 							String esito = "";
-							if (typeSkuOrEpc == "S") {
+							if (typeSkuOrEpc.equalsIgnoreCase("S")) {
 								esito = this.dataStreamService.compareByPackage(PACKAGE_BARCODE, Utils.SKU);
 							} else {
 								esito = this.dataStreamService.compareByPackage(PACKAGE_BARCODE, Utils.EPC);
 							}
-							System.out.println(">> ESITO >>" + esito);
+							logger.info(">> ESITO >>" + esito);
 							// OK
 							if (esito.equals(Utils.OK)) {
-								System.out.println(">> " + sender + "V01" + idmsg + "**V7000024EC" + PACKAGE_BARCODE + "OK");
+								logger.info(">> " + sender + "V01" + idmsg + "**V7000024EC" + PACKAGE_BARCODE + "OK");
 								pw.print(sender + "V01" + idmsg + "**V7000024EC" + PACKAGE_BARCODE + "OK");
 								pw.flush();
 								// KO
 							} else {
-								System.out.println(">> " + sender + "V01" + idmsg + "**V7000024EC" + PACKAGE_BARCODE + "KO");
+								logger.info(">> " + sender + "V01" + idmsg + "**V7000024EC" + PACKAGE_BARCODE + "KO");
 								pw.print(sender + "V01" + idmsg + "**V7000024EC" + PACKAGE_BARCODE + "KO");
 								pw.flush();
 							}
@@ -158,12 +166,14 @@ public class WMSAuto implements Runnable {
 					}
 
 				} catch (Exception e) {
+					logger.error(e.toString() + " " +  e.getMessage());
 					e.printStackTrace();
 				}
 
 			}
 
 		} catch (Exception e) {
+			logger.error(e.toString() + " " +  e.getMessage());
 			e.printStackTrace();
 			running = false;
 		} finally {

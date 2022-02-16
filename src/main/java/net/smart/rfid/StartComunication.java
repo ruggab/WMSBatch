@@ -1,5 +1,6 @@
 package net.smart.rfid;
 
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +13,7 @@ import net.smart.rfid.tunnel.db.services.DataStreamService;
 @Component
 public class StartComunication implements CommandLineRunner {
 
-	private static final Logger LOG = LoggerFactory.getLogger(StartComunication.class);
+	private static final Logger logger = LoggerFactory.getLogger(StartComunication.class);
 	
 	@Autowired
 	DataStreamService dataStreamService;
@@ -21,7 +22,7 @@ public class StartComunication implements CommandLineRunner {
 	@Override
 	public void run(String... args) throws Exception {
 		
-		LOG.info("Start Thread WMSAuto");
+		logger.info("Start Thread WMSAuto");
 	
 		WMSAuto wmsAuto = new WMSAuto(dataStreamService);
 		Thread threadWms = new Thread(wmsAuto);
