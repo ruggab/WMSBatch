@@ -1,5 +1,7 @@
 package net.smart.rfid.tunnel.db.entity;
 
+import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -26,7 +28,18 @@ public class ReaderStreamAtteso {
 	
 	private String barcode;
 
+	public Date getDataInsert() {
+		return dataInsert;
+	}
 
+
+	public void setDataInsert(Date dataInsert) {
+		this.dataInsert = dataInsert;
+	}
+
+
+	private Date dataInsert;
+	
 	public ReaderStreamAtteso() {
 	}
 

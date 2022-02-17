@@ -1,5 +1,6 @@
 package net.smart.rfid.tunnel.db.services;
 
+import java.util.Date;
 import java.util.List;
 
 import javax.transaction.Transactional;
@@ -34,6 +35,7 @@ public class DataStreamService  {
 		rsa.setEpc(Utils.removeSpaces(epc));
 		rsa.setTid(Utils.removeSpaces(tid));
 		rsa.setBarcode(Utils.removeSpaces(sku));
+		rsa.setDataInsert(new Date());
 		ReaderStreamAtteso readerStreamAtteso = readerStreamAttesoRepository.save(rsa);
 		return readerStreamAtteso;
 	}
