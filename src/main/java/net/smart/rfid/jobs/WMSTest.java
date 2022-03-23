@@ -38,8 +38,6 @@ public class WMSTest implements Runnable {
 	Timer timer = new Timer();
 
 	public static String type = "";
-	public static String extPackage = "";
-	
 	DataStreamService dataStreamService;
 
 	public WMSTest(DataStreamService dataStreamService) {
@@ -72,14 +70,14 @@ public class WMSTest implements Runnable {
 
 			if (login) {
 				//LOGIN TO AUTO
-				logger.debug("" + mac + "   V010000001**V7000005LIV01");
+				logger.info("" + mac + "   V010000001**V7000005LIV01");
 				pw.print("" + mac + "   V010000001**V7000005LIV01");
 				pw.flush();
 				
-				//LOGIN TO MANUAL
-				logger.debug("" + mac + "   V020000001**V7000005LIV02");
-				pw.print("" + mac + "   V020000001**V7000005LIV02");
-				pw.flush();
+//				//LOGIN TO MANUAL
+//				logger.info("" + mac + "   V010000001**V7000005LIV01");
+//				pw.print("" + mac + "   V010000001**V7000005LIV01");
+//				pw.flush();
 
 				login = false;
 			}
@@ -95,23 +93,11 @@ public class WMSTest implements Runnable {
 
 			type = "";
 
-			while ((read = is.read(buffer)) != -1 || !extPackage.equals("")) {
+			while ((read = is.read(buffer)) != -1) {
 				try {
-					if (!extPackage.equals("")) {
-						extPackage = extPackage + "                    ";
-						extPackage = extPackage.substring(0, 20);
-						msgid = msgid + 1;
-						String sMsgid = String.format("%07d", msgid);
-						Thread.sleep(500);
-						// Test Barcode
-						logger.debug(">> " + mac + "   PLV" + sMsgid + "**V7000084RD               SCMAN003       " + extPackage + "00000000000000000               ");
-						pw.print("" + mac + "   PLV" + sMsgid + "**V7000084RD               SCMAN003       " + extPackage + "00000000000000000               ");
-						pw.flush();
-						extPackage = "";
-						continue;
-					}
+					
 					String output = new String(buffer, 0, read);
-					logger.info("<< " + output + " (" + output.length() + ")");
+					logger.info("<<AUTO " + output + " (" + output.length() + ")");
 					String in[] = output.split("\\n");
 					for (String t : in) {
 
@@ -260,8 +246,6 @@ public class WMSTest implements Runnable {
 
 			// Keep Alive (Every 5 sec)
 			System.out.println(">> " + mac + "   V01" + sMsgid + "**V7000001AK");
-			
-			System.out.println("package: " + extPackage);
 
 			String msgAck = "" + mac + "   V01" + sMsgid + "**V7000001AK";
 
