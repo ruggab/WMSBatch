@@ -18,10 +18,9 @@ import net.smart.rfid.tunnel.db.repository.ScannerStreamRepository;
 import net.smart.rfid.utils.Utils;
 
 @Service
-public class DataStreamService  {
+public class DataStreamService {
 
 	Logger logger = LoggerFactory.getLogger(DataStreamService.class);
-	
 
 	@Autowired
 	private ReaderStreamAttesoRepository readerStreamAttesoRepository;
@@ -40,34 +39,29 @@ public class DataStreamService  {
 		return readerStreamAtteso;
 	}
 
-
-	
-	public String compareByPackage( String packageData, String typeExp) throws Exception {
+	public String compareByPackage(String packageData, String typeExp) throws Exception {
 		packageData = packageData.trim();
-		logger.info("compareByPackage:" +  packageData);
+		logger.info("compareByPackage:" + packageData);
 		ScannerStream sc = scannerStreamRepository.findByPackageData(packageData);
-		logger.info("idpack:" +  sc.getId());
-		Integer qtaAtteso = readerStreamAttesoRepository.getCountExpected(packageData);
-		logger.info("quantita atteso:" + qtaAtteso);
-		String esito = Utils.MISSING_EXPECTED;
-		if (qtaAtteso != 0 && !packageData.contains("E-")) {
-			List<ExpectedDifference> listDiff = readerStreamAttesoRepository.getEsitoDiffNew(sc.getId().intValue(), packageData, typeExp);
-			esito = Utils.OK;
-			if (listDiff.size() > 0) {
-				esito = Utils.KO;
+		String esito = Utils.KO;
+		if (sc != null) {
+			logger.info("idpack:" + sc.getId());
+			Integer qtaAtteso = readerStreamAttesoRepository.getCountExpected(packageData);
+			logger.info("quantita atteso:" + qtaAtteso);
+			if (qtaAtteso != 0 && !packageData.contains("E-")) {
+				List<ExpectedDifference> listDiff = readerStreamAttesoRepository.getEsitoDiffNew(sc.getId().intValue(), packageData, typeExp);
+				if (listDiff.size() == 0) {
+					esito = Utils.OK;
+				}
 			}
 		}
 		return esito;
 	}
-	
-	
+
 	@Transactional
 	public void deleteExpectedByPackage(String packageData) throws Exception {
 		//
 		readerStreamAttesoRepository.deleteByPackageData(packageData.trim());
 	}
-	
-	
-	
-	
+
 }
