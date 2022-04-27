@@ -11,6 +11,8 @@ import java.net.UnknownHostException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import net.smart.rfid.jobs.WMSTest;
 import net.smart.rfid.tunnel.db.services.DataStreamService;
+import net.smart.rfid.utils.PackageModel;
 import net.smart.rfid.utils.PropertiesUtil;
 
 @RestController
@@ -36,21 +39,14 @@ public class WMSController {
 	public static int msgid = 1;
 	public static String PACKAGE_BARCODE = "";
 
-	
-	
+	@PostMapping("/callWMSIn")
+	public ResponseEntity<String> callWMSIn(@RequestBody PackageModel packageModel) throws Exception {
 
-	
-	
-	
-	
-	@GetMapping("/callWMSInV2")
-	public String callWMSInV2(@RequestParam String packageId) throws Exception {
-
-		String txt = "";
+		String  packageId = "";
 		try {
 
 			// fill barcodeIn
-			packageId = packageId + "                    ";
+			packageId = packageModel.getPackageData() + "                    ";
 			packageId = packageId.substring(0, 20);
 
 			String WMS_IP = PropertiesUtil.getWmsAutoIp();
@@ -66,9 +62,7 @@ public class WMSController {
 			echoSocket = new Socket(WMS_IP, new Integer(WMS_PORT));
 			is = echoSocket.getInputStream();
 			pw = new PrintWriter(echoSocket.getOutputStream(), true);
-			
-			
-			
+
 			// Test Barcode
 			logger.info(">> " + mac + "   PLV" + sMsgid + "**V7000053RF               SCMAN002       " + packageId + " ");
 			pw.print("" + mac + "   PLV" + sMsgid + "**V7000053RF               SCMAN002       " + packageId + " ");
@@ -77,25 +71,22 @@ public class WMSController {
 			echoSocket.close();
 
 		} catch (Exception e) {
-			// e.printStackTrace();
 			echoSocket.close();
 			logger.error("WMSAuto Socket Closed...");
+			return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		} finally {
 			try {
 				echoSocket.close();
 			} catch (Exception e) {
 			}
-		}	
-		return txt;
+		}
+		return ResponseEntity.ok("OK");
 	}
-	
-	
-	
-	
-	@GetMapping("/callWMSOutV2")
-	public String callWMSOutV2(@RequestParam String packageId) throws Exception {
 
-		String txt = "";
+	@PostMapping("/callWMSOut")
+	public ResponseEntity<String> callWMSOut(@RequestBody PackageModel packageModel) throws Exception {
+
+		String packageId = "";
 		try {
 
 			// fill barcodeIn
@@ -116,7 +107,7 @@ public class WMSController {
 
 			is = echoSocket.getInputStream();
 			pw = new PrintWriter(echoSocket.getOutputStream(), true);
-			
+
 			// Test Barcode
 			logger.info(">> " + mac + "   PLV" + sMsgid + "**V7000084RD               SCMAN003       " + packageId + "00000000000000000               ");
 			pw.print("" + mac + "   PLV" + sMsgid + "**V7000084RD               SCMAN003       " + packageId + "00000000000000000               ");
@@ -127,17 +118,15 @@ public class WMSController {
 		} catch (Exception e) {
 			// e.printStackTrace();
 			echoSocket.close();
-			logger.error("WMSAuto Socket Closed...");
+			return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		} finally {
 			try {
 				echoSocket.close();
 			} catch (Exception e) {
 			}
 		}
-		return txt;
+		return ResponseEntity.ok("OK");
 	}
-
-
 
 	public static String getMacAddress() {
 
