@@ -1,5 +1,6 @@
 package net.smart.rfid.jobs;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.InetAddress;
@@ -18,12 +19,12 @@ import org.springframework.stereotype.Component;
 import net.smart.rfid.tunnel.db.services.DataStreamService;
 import net.smart.rfid.utils.PropertiesUtil;
 import net.smart.rfid.utils.Utils;
+import net.smart.rfid.utils.WebSocketToClient;
 
 @Component
-public class WMSTest implements Runnable {
-	
-	private static final Logger logger = LoggerFactory.getLogger(WMSTest.class);
-	
+public class WMSJob extends GenericJob {
+
+	private static final Logger logger = LoggerFactory.getLogger(WMSJob.class);
 
 	static boolean running = false;
 
@@ -33,14 +34,14 @@ public class WMSTest implements Runnable {
 	public static int msgid = 1;
 	public static int msgid2 = 2000000;
 
-	
-
 	Timer timer = new Timer();
+	TimerTask keepAlive1 = null;
+	TimerTask keepAlive2 = null;
 
 	public static String type = "";
 	DataStreamService dataStreamService;
 
-	public WMSTest(DataStreamService dataStreamService) {
+	public WMSJob(DataStreamService dataStreamService) {
 		this.dataStreamService = dataStreamService;
 	}
 
@@ -48,7 +49,6 @@ public class WMSTest implements Runnable {
 	public void run() {
 		logger.info("Start RUN");
 		String PACKAGE_BARCODE = "";
-		running = true;
 		try {
 			String WMS_IP = PropertiesUtil.getWmsAutoIp();
 			String WMS_PORT = PropertiesUtil.getWmsAutoPort();
@@ -57,35 +57,32 @@ public class WMSTest implements Runnable {
 			System.out.println(WMS_IP + ":" + WMS_PORT);
 			echoSocket = new Socket(WMS_IP, new Integer(WMS_PORT));
 			is = echoSocket.getInputStream();
-			
+
 			byte[] buffer = new byte[2536];
 			pw = new PrintWriter(echoSocket.getOutputStream(), true);
 
-			// pw.flush();
-			boolean login = true;
 			int read;
 
 			String mac = getMacAddress();
 			mac = mac.replaceAll("-", "").toUpperCase();
 
-			if (login) {
-				//LOGIN TO AUTO
-				logger.info("login V01>>" + mac + "   V010000001**V7000005LIV01");
-				pw.print("" + mac + "   V010000001**V7000005LIV01");
-				pw.flush();
-				//
-				//LOGIN TO MANUAL
-				logger.info("login V02>>" + mac + "   V020000001**V7000005LIV02");
-				pw.print("" + mac + "   V020000001**V7000005LIV02");
-				pw.flush();
-				//
-				login = false;
-			}
-			
+			// LOGIN TO AUTO
+			logger.info("login V01>>" + mac + "   V010000001**V7000005LIV01");
+			pw.print("" + mac + "   V010000001**V7000005LIV01");
+			pw.flush();
 			//
-			timer.schedule(new KeepAlive(pw, mac), 0, 5000);
-			timer.schedule(new KeepAlive2(pw, mac), 0, 5000);
+			// LOGIN TO MANUAL
+			logger.info("login V02>>" + mac + "   V020000001**V7000005LIV02");
+			pw.print("" + mac + "   V020000001**V7000005LIV02");
+			pw.flush();
+			//
 
+			//
+			keepAlive1 = new KeepAlive1(pw, mac);
+			keepAlive2 = new KeepAlive2(pw, mac);
+			timer.schedule(keepAlive1, 0, 4000);
+			timer.schedule(keepAlive2, 0, 5000);
+			running = true;
 			String sender = "";
 			String idmsg = "";
 			String gate = "";
@@ -95,9 +92,9 @@ public class WMSTest implements Runnable {
 
 			type = "";
 
-			while ((read = is.read(buffer)) != -1) {
+			while ((read = is.read(buffer)) != -1 && running) {
 				try {
-					
+
 					String output = new String(buffer, 0, read);
 					logger.info("WMS RESP BUFF:<< " + output + " (" + output.length() + ")");
 					String in[] = output.split("\\n");
@@ -111,7 +108,7 @@ public class WMSTest implements Runnable {
 							logger.debug("sender:<< " + sender);
 							gate = t.substring(15, 18);
 							logger.debug("gate:<< " + gate);
-							
+
 							idmsg = t.substring(18, 25);
 							logger.debug("idmsg:<< " + idmsg);
 							length = t.substring(30, 35);
@@ -188,17 +185,22 @@ public class WMSTest implements Runnable {
 					}
 
 				} catch (Exception e) {
-					logger.error(e.toString() + " " +  e.getMessage());
-					e.printStackTrace();
+					logger.error("**** Error on cicle: " + e.toString() + " " + e.getMessage());
 				}
 			}
 
 		} catch (Exception e) {
-			logger.error(e.toString() + " " +  e.getMessage());
-			e.printStackTrace();
-			running = false;
+			logger.error("***** ERROR: " + e.toString() + " " + e.getMessage());
 		} finally {
 			running = false;
+			try {
+				stop();
+				logger.info("Close socket WMS");
+				WebSocketToClient.sendMessageOnPackageReadEvent("STOP");
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				logger.error("***** ERROR on Close socket: " + e.toString() + " " + e.getMessage());
+			}
 		}
 	}
 
@@ -210,98 +212,88 @@ public class WMSTest implements Runnable {
 
 			ip = InetAddress.getLocalHost();
 			logger.debug("Current IP address  : " + ip.getHostAddress());
-
 			NetworkInterface network = NetworkInterface.getByInetAddress(ip);
-
 			byte[] mac = network.getHardwareAddress();
-
 			logger.debug("Current MAC address : ");
-
 			StringBuilder sb = new StringBuilder();
 			for (int i = 0; i < mac.length; i++) {
 				sb.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? "-" : ""));
 			}
 			logger.debug(sb.toString());
-
 			macAddress = sb.toString();
 
 		} catch (UnknownHostException e) {
-
 			e.printStackTrace();
-
 		} catch (SocketException e) {
-
 			e.printStackTrace();
-
 		}
 		return macAddress;
 	}
 
-	class KeepAlive extends TimerTask {
+	class KeepAlive1 extends TimerTask {
 
 		private PrintWriter pw;
 		private String mac;
-
-		public KeepAlive(PrintWriter pw, String mac) {
+		public KeepAlive1(PrintWriter pw, String mac) {
 			this.pw = pw;
 			this.mac = mac;
 		}
-
 		public void run() {
-
 			if (msgid == 9999999) {
 				msgid = 0;
 			}
-				
 			msgid = msgid + 1;
-
 			String sMsgid = String.format("%07d", msgid);
-
-			// Keep Alive (Every 5 sec)
-			//logger.info("AUTO ping>> " + mac + "   V01" + sMsgid + "**V7000002AK");
-
-			String msgAck = "" + mac + "   V01" + sMsgid + "**V7000002AK";
-			
-			// new Thread(new CallNotify("PING","L")).start();
-
+			String msgAck = "GATE1";
+			//
+			WebSocketToClient.sendMessageOnPackageReadEvent(msgAck);
+			//
 			pw.print(msgAck);
 			pw.flush();
 
 		}
 	}
-	
+
 	class KeepAlive2 extends TimerTask {
 
 		private PrintWriter pw;
 		private String mac;
-
 		public KeepAlive2(PrintWriter pw, String mac) {
 			this.pw = pw;
 			this.mac = mac;
 		}
-
 		public void run() {
-
 			if (msgid == 9999999) {
 				msgid = 0;
 			}
-				
 			msgid = msgid + 1;
-
 			String sMsgid = String.format("%07d", msgid);
-
-			// Keep Alive (Every 5 sec)
-			//logger.info("AUTO ping>> " + mac + "   V02" + sMsgid + "**V7000002AK");
-
-			String msgAck = "" + mac + "   V02" + sMsgid + "**V7000002AK";
-			
-			// new Thread(new CallNotify("PING","L")).start();
-
+			String msgAck = "GATE2";
+			WebSocketToClient.sendMessageOnPackageReadEvent(msgAck);
 			pw.print(msgAck);
 			pw.flush();
-
 		}
 	}
-
+	
+	@Override
+	public void stop() throws Exception {
+		logger.info("STOP WMS");
+		running = false;
+		try {
+			if (timer != null) {
+				timer.cancel();
+				timer.purge();
+				keepAlive1.cancel();
+				keepAlive1.cancel();
+			}
+			if (echoSocket != null) {
+				echoSocket.close();
+			}
+			
+		} catch (Exception e) {
+			logger.error("stop: " + e.toString() + " - " + e.getMessage());
+		}
+		logger.info("stop wms from service");
+	}
 
 }

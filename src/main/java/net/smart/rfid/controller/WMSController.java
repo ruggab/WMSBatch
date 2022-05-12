@@ -7,7 +7,6 @@ import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,11 +17,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import net.smart.rfid.jobs.WMSTest;
+import net.smart.rfid.jobs.WMSJob;
 import net.smart.rfid.tunnel.db.services.DataStreamService;
+import net.smart.rfid.utils.GenerateResponse;
 import net.smart.rfid.utils.PackageModel;
 import net.smart.rfid.utils.PropertiesUtil;
 
@@ -38,11 +36,12 @@ public class WMSController {
 	static PrintWriter pw = null;
 	public static int msgid = 1;
 	public static String PACKAGE_BARCODE = "";
-
+	WMSJob wmsJob = null;
+	
 	@PostMapping("/callWMSIn")
 	public ResponseEntity<String> callWMSIn(@RequestBody PackageModel packageModel) throws Exception {
 
-		String  packageId = "";
+		String packageId = "";
 		try {
 
 			// fill barcodeIn
@@ -161,6 +160,40 @@ public class WMSController {
 
 		}
 		return macAddress;
+	}
+	
+	
+
+	@GetMapping("/startWms")
+	public GenerateResponse start() throws Exception {
+		try {
+			wmsJob = new WMSJob(dataStreamService);
+			Thread wmsThread = new Thread(wmsJob);
+			wmsThread.start();
+			GenerateResponse gg =  new GenerateResponse();
+			gg.setMessage("START");
+			return gg;
+		} catch (Exception ex) {
+			logger.debug(ex.getMessage());
+			throw ex;
+		}
+
+	}
+
+	@GetMapping("/stopWms")
+	public GenerateResponse stop() throws Exception {
+		try {
+			// List<JobInterface> lisJob = new ArrayList<JobInterface>(mapDispo.values());
+			if (wmsJob != null) {
+				wmsJob.stop();
+			}
+			GenerateResponse gg =  new GenerateResponse();
+			gg.setMessage("STOP");
+			return gg;
+		} catch (Exception ex) {
+			logger.error("EXCEPTION DURING MANUAL STOP: " + ex.getMessage());
+			throw ex;
+		}
 	}
 
 }
