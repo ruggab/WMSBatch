@@ -34,9 +34,9 @@ public class WMSJob extends GenericJob {
 	public static int msgid = 1;
 	public static int msgid2 = 2000000;
 
-	Timer timer = new Timer();
-	TimerTask keepAlive1 = null;
-	TimerTask keepAlive2 = null;
+	static Timer timer = new Timer();
+	static TimerTask keepAlive1 = null;
+	static TimerTask keepAlive2 = null;
 
 	public static String type = "";
 	DataStreamService dataStreamService;
@@ -196,7 +196,7 @@ public class WMSJob extends GenericJob {
 			try {
 				stop();
 				logger.info("Close socket WMS");
-				WebSocketToClient.sendMessageOnPackageReadEvent("STOP");
+				
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				logger.error("***** ERROR on Close socket: " + e.toString() + " " + e.getMessage());
@@ -230,6 +230,8 @@ public class WMSJob extends GenericJob {
 		return macAddress;
 	}
 
+	
+	static String msgAck1 = "";
 	class KeepAlive1 extends TimerTask {
 
 		private PrintWriter pw;
@@ -244,18 +246,20 @@ public class WMSJob extends GenericJob {
 			}
 			msgid = msgid + 1;
 			String sMsgid = String.format("%07d", msgid);
-			String msgAck = "GATE1";
-			//
-			WebSocketToClient.sendMessageOnPackageReadEvent(msgAck);
-			//
+			String msgAck = "" + mac + "   V01" + sMsgid + "**V7000002AK";
 			pw.print(msgAck);
 			pw.flush();
+			//message to websocket
+			msgAck1 = "GATE1-" + msgid;
+			WebSocketToClient.sendMessageOnPackageReadEvent(msgAck1);
+			//
+			
 
 		}
 	}
 
+	static String msgAck2 = "";
 	class KeepAlive2 extends TimerTask {
-
 		private PrintWriter pw;
 		private String mac;
 		public KeepAlive2(PrintWriter pw, String mac) {
@@ -268,10 +272,12 @@ public class WMSJob extends GenericJob {
 			}
 			msgid = msgid + 1;
 			String sMsgid = String.format("%07d", msgid);
-			String msgAck = "GATE2";
-			WebSocketToClient.sendMessageOnPackageReadEvent(msgAck);
+			String msgAck = "" + mac + "   V02" + sMsgid + "**V7000002AK";
 			pw.print(msgAck);
 			pw.flush();
+			msgAck2 = "GATE2-" + msgid;
+			WebSocketToClient.sendMessageOnPackageReadEvent(msgAck2);
+			
 		}
 	}
 	
@@ -281,10 +287,10 @@ public class WMSJob extends GenericJob {
 		running = false;
 		try {
 			if (timer != null) {
-				timer.cancel();
+				//timer.cancel();
 				timer.purge();
 				keepAlive1.cancel();
-				keepAlive1.cancel();
+				keepAlive2.cancel();
 			}
 			if (echoSocket != null) {
 				echoSocket.close();
@@ -292,6 +298,8 @@ public class WMSJob extends GenericJob {
 			
 		} catch (Exception e) {
 			logger.error("stop: " + e.toString() + " - " + e.getMessage());
+		} finally {
+			WebSocketToClient.sendMessageOnPackageReadEvent("STOP");
 		}
 		logger.info("stop wms from service");
 	}

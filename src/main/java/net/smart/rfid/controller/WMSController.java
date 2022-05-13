@@ -36,7 +36,7 @@ public class WMSController {
 	static PrintWriter pw = null;
 	public static int msgid = 1;
 	public static String PACKAGE_BARCODE = "";
-	WMSJob wmsJob = null;
+	static WMSJob wmsJob = null;
 	
 	@PostMapping("/callWMSIn")
 	public ResponseEntity<String> callWMSIn(@RequestBody PackageModel packageModel) throws Exception {
@@ -166,6 +166,7 @@ public class WMSController {
 
 	@GetMapping("/startWms")
 	public GenerateResponse start() throws Exception {
+		
 		try {
 			wmsJob = new WMSJob(dataStreamService);
 			Thread wmsThread = new Thread(wmsJob);
