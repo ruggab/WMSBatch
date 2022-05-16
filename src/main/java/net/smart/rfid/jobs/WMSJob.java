@@ -32,7 +32,8 @@ public class WMSJob extends GenericJob {
 	static InputStream is = null;
 	static PrintWriter pw = null;
 	public static int msgid = 1;
-	public static int msgid2 = 2000000;
+	public static int cont1 = 1;
+	public static int cont2 = 1;
 
 	static Timer timer = new Timer();
 	static TimerTask keepAlive1 = null;
@@ -80,7 +81,7 @@ public class WMSJob extends GenericJob {
 			//
 			keepAlive1 = new KeepAlive1(pw, mac);
 			keepAlive2 = new KeepAlive2(pw, mac);
-			timer.schedule(keepAlive1, 0, 4000);
+			timer.schedule(keepAlive1, 0, 5000);
 			timer.schedule(keepAlive2, 0, 5000);
 			running = true;
 			String sender = "";
@@ -153,6 +154,13 @@ public class WMSJob extends GenericJob {
 
 						if (cdapp.equalsIgnoreCase("OK")) {
 							logger.debug("PING RESP: OK");
+							logger.info("cont1,cont2: " +  cont1 +" - "+ cont2);
+							if (gate.equals("V01")) {
+								cont1 = cont1 - 1;
+							}
+							if (gate.equals("V02")) {
+								cont2 = cont2 - 1;
+							}
 						}
 
 						if (cdapp.equalsIgnoreCase("CC")) {
@@ -231,7 +239,7 @@ public class WMSJob extends GenericJob {
 	}
 
 	
-	static String msgAck1 = "";
+	
 	class KeepAlive1 extends TimerTask {
 
 		private PrintWriter pw;
@@ -240,25 +248,38 @@ public class WMSJob extends GenericJob {
 			this.pw = pw;
 			this.mac = mac;
 		}
-		public void run() {
+		
+		public void run()  {
 			if (msgid == 9999999) {
 				msgid = 0;
 			}
 			msgid = msgid + 1;
 			String sMsgid = String.format("%07d", msgid);
+			cont1 = cont1 +1;
+			logger.info("cont1:" + cont1);
 			String msgAck = "" + mac + "   V01" + sMsgid + "**V7000002AK";
 			pw.print(msgAck);
 			pw.flush();
-			//message to websocket
-			msgAck1 = "GATE1-" + msgid;
-			WebSocketToClient.sendMessageOnPackageReadEvent(msgAck1);
+			if (cont1 < 3) {
+				//message to websocket
+				String msgAck1 = "GATE1-" + msgid;
+				WebSocketToClient.sendMessageOnPackageReadEvent(msgAck1);
+			} else {
+				try {
+					stop();
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			
 			//
 			
 
 		}
 	}
 
-	static String msgAck2 = "";
+
 	class KeepAlive2 extends TimerTask {
 		private PrintWriter pw;
 		private String mac;
@@ -273,10 +294,23 @@ public class WMSJob extends GenericJob {
 			msgid = msgid + 1;
 			String sMsgid = String.format("%07d", msgid);
 			String msgAck = "" + mac + "   V02" + sMsgid + "**V7000002AK";
+			cont2 = cont2 +1;
+			logger.info("cont2:" + cont2);
 			pw.print(msgAck);
 			pw.flush();
-			msgAck2 = "GATE2-" + msgid;
-			WebSocketToClient.sendMessageOnPackageReadEvent(msgAck2);
+			//
+			if (cont1 < 3) {
+				//message to websocket
+				String msgAck2 = "GATE2-" + msgid;
+				WebSocketToClient.sendMessageOnPackageReadEvent(msgAck2);
+			} else {
+				try {
+					stop();
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
 			
 		}
 	}
