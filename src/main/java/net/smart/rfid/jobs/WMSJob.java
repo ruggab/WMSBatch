@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import net.smart.rfid.controller.WMSController;
 import net.smart.rfid.tunnel.db.services.DataStreamService;
 import net.smart.rfid.utils.PropertiesUtil;
 import net.smart.rfid.utils.Utils;
@@ -32,8 +33,8 @@ public class WMSJob extends GenericJob {
 	static InputStream is = null;
 	static PrintWriter pw = null;
 	public static int msgid = 1;
-	public static int cont1 = 1;
-	public static int cont2 = 1;
+	public static int cont1 = 0;
+	public static int cont2 = 0;
 
 	static Timer timer = new Timer();
 	static TimerTask keepAlive1 = null;
@@ -55,10 +56,11 @@ public class WMSJob extends GenericJob {
 			String WMS_PORT = PropertiesUtil.getWmsAutoPort();
 			String SEPARATOR = PropertiesUtil.getWmsAutoSeparator();
 			String typeSkuOrEpc = PropertiesUtil.getWmsAutoEpctype();
-			System.out.println(WMS_IP + ":" + WMS_PORT);
+			logger.info(WMS_IP + ":" + WMS_PORT);
+			//
 			echoSocket = new Socket(WMS_IP, new Integer(WMS_PORT));
 			is = echoSocket.getInputStream();
-
+			//
 			byte[] buffer = new byte[2536];
 			pw = new PrintWriter(echoSocket.getOutputStream(), true);
 
@@ -79,9 +81,11 @@ public class WMSJob extends GenericJob {
 			//
 
 			//
+			cont1 = 0;
+			cont2 = 0;
 			keepAlive1 = new KeepAlive1(pw, mac);
 			keepAlive2 = new KeepAlive2(pw, mac);
-			timer.schedule(keepAlive1, 0, 5000);
+			timer.schedule(keepAlive1, 0, 4000);
 			timer.schedule(keepAlive2, 0, 5000);
 			running = true;
 			String sender = "";
@@ -156,10 +160,10 @@ public class WMSJob extends GenericJob {
 							logger.debug("PING RESP: OK");
 							logger.info("cont1,cont2: " +  cont1 +" - "+ cont2);
 							if (gate.equals("V01")) {
-								cont1 = cont1 - 1;
+								cont1 = 0;
 							}
 							if (gate.equals("V02")) {
-								cont2 = cont2 - 1;
+								cont2 = 0;
 							}
 						}
 
@@ -266,10 +270,18 @@ public class WMSJob extends GenericJob {
 				WebSocketToClient.sendMessageOnPackageReadEvent(msgAck1);
 			} else {
 				try {
-					stop();
+					boolean keepalive = true;
+					if (keepalive) {
+						stop();
+						WMSController cc = new WMSController();
+						cc.start();
+					} else {
+						stop();
+					}
+					
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
-					e.printStackTrace();
+					logger.error("Restart WMS error:" + e.toString());
 				}
 			}
 			
@@ -299,13 +311,22 @@ public class WMSJob extends GenericJob {
 			pw.print(msgAck);
 			pw.flush();
 			//
-			if (cont1 < 3) {
+			if (cont2 < 3) {
 				//message to websocket
 				String msgAck2 = "GATE2-" + msgid;
 				WebSocketToClient.sendMessageOnPackageReadEvent(msgAck2);
 			} else {
 				try {
-					stop();
+//					boolean keepalive = true;
+//					if (keepalive) {
+//						stop();
+//						WMSController cc = new WMSController();
+//						cc.start();
+//					} else {
+//						stop();
+//					}
+					WebSocketToClient.sendMessageOnPackageReadEvent("STOP");
+					
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
