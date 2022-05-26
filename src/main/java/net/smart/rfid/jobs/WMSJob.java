@@ -15,6 +15,10 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.regex.Pattern;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -251,8 +255,22 @@ public class WMSJob extends GenericJob {
 					boolean keepalive = true;
 					if (keepalive) {
 						stop();
-						WMSController cc = new WMSController(dataStreamService);
-						cc.start();
+						//RESTART
+						Client client = ClientBuilder.newClient();
+						WebTarget target = client.target("http://localhost:8080/api/v1/startWms");
+						try {
+							target.request().get();
+						} catch (Exception e) {
+							logger.error("Path error");
+							target = client.target("http://localhost:8080/WMSBatch/api/v1/startWms");
+							try {
+								target.request().get();
+							} catch (Exception e2) {
+								logger.error("Path error 2");
+							}
+							
+						}
+						
 					} else {
 						stop();
 					}
