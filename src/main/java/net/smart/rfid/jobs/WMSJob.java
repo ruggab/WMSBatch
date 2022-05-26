@@ -8,6 +8,9 @@ import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.regex.Pattern;
@@ -66,9 +69,10 @@ public class WMSJob extends GenericJob {
 
 			int read;
 
-			String mac = getMacAddress();
+			String mac = Utils.getMacAddress();
+			logger.info("mac: " + mac);
 			mac = mac.replaceAll("-", "").toUpperCase();
-
+			logger.info("mac format for wms: " + mac);
 			// LOGIN TO AUTO
 			logger.info("login V01>>" + mac + "   V010000001**V7000005LIV01");
 			pw.print("" + mac + "   V010000001**V7000005LIV01");
@@ -216,32 +220,6 @@ public class WMSJob extends GenericJob {
 		}
 	}
 
-	public static String getMacAddress() {
-
-		InetAddress ip;
-		String macAddress = "";
-		try {
-
-			ip = InetAddress.getLocalHost();
-			logger.debug("Current IP address  : " + ip.getHostAddress());
-			NetworkInterface network = NetworkInterface.getByInetAddress(ip);
-			byte[] mac = network.getHardwareAddress();
-			logger.debug("Current MAC address : ");
-			StringBuilder sb = new StringBuilder();
-			for (int i = 0; i < mac.length; i++) {
-				sb.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? "-" : ""));
-			}
-			logger.debug(sb.toString());
-			macAddress = sb.toString();
-
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		} catch (SocketException e) {
-			e.printStackTrace();
-		}
-		return macAddress;
-	}
-
 	
 	
 	class KeepAlive1 extends TimerTask {
@@ -273,7 +251,7 @@ public class WMSJob extends GenericJob {
 					boolean keepalive = true;
 					if (keepalive) {
 						stop();
-						WMSController cc = new WMSController();
+						WMSController cc = new WMSController(dataStreamService);
 						cc.start();
 					} else {
 						stop();
