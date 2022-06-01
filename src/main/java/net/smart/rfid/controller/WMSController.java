@@ -95,7 +95,7 @@ public class WMSController {
 		try {
 
 			// fill barcodeIn
-			packageId = packageId + "                    ";
+			packageId = packageModel.getPackageData() + "                    ";
 			packageId = packageId.substring(0, 20);
 
 			String WMS_IP = PropertiesUtil.getWmsAutoIp();
